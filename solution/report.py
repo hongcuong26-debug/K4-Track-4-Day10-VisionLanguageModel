@@ -25,7 +25,7 @@ def illustrations(entries, predictions, name):
     records = []
     for i, (errors, neg_tp, entry, pred) in enumerate(chosen):
         image = open_image(entry)
-        draw_boxes(image, _gt_boxes(entry), "lime")
+        draw_boxes(image, _gt_boxes(entry), "lime", width=4)
         draw_boxes(image, pred, "red")
         path = out / f"{name}_{i+1}.jpg"
         image.save(path)

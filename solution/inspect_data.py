@@ -38,14 +38,14 @@ def audit():
     return stats
 
 
-def draw_boxes(image, boxes, color, scale=1000):
+def draw_boxes(image, boxes, color, scale=1000, width=2):
     draw = ImageDraw.Draw(image)
     for box in boxes:
         bb = box.get("bbox_2d", box.get("bbox"))
         x1, y1, x2, y2 = bb
         coords = [x1/scale*image.width, y1/scale*image.height,
                   x2/scale*image.width, y2/scale*image.height]
-        draw.rectangle(coords, outline=color, width=2)
+        draw.rectangle(coords, outline=color, width=width)
         draw.text((coords[0], max(0, coords[1]-12)), box["label"], fill=color)
 
 
