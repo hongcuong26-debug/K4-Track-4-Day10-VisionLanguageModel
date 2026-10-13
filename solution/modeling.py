@@ -22,7 +22,9 @@ def load_base(model_id):
     quant = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                               bnb_4bit_compute_dtype=torch.float16,
                               bnb_4bit_use_double_quant=True,
-                              llm_int8_skip_modules=["visual", "lm_head"])
+                              # Transformers 5.19 matches full module prefixes;
+                              # "visual" alone does not match "model.visual".
+                              llm_int8_skip_modules=["visual", "model.visual", "lm_head"])
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_id, quantization_config=quant, dtype=torch.float16,
         device_map={"": 0}, attn_implementation="sdpa")

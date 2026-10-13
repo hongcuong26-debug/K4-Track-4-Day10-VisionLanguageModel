@@ -50,6 +50,11 @@ Nguồn đối chiếu:
 13. **Log subprocess trong notebook.** Dùng Popen với stdout=PIPE/stderr=STDOUT
     rồi print từng dòng để nhìn thấy loss, tiến độ và traceback trong output cell.
     subprocess.run mặc định có thể đưa log về kernel console thay vì output cell.
+14. **Skip modules trên Transformers 5.19.0.** Chạy model thật cho thấy chỉ
+    `["visual", "lm_head"]` vẫn lượng tử hóa `model.visual.blocks.0.attn.qkv`.
+    Hàm should_convert_module kiểm tra tên đầy đủ hoặc tiền tố đầy đủ; phải thêm
+    `"model.visual"` vào skip list. Mã kiểm tra mọi module vision sau khi nạp,
+    dừng ngay khi phát hiện Linear4bit để tránh train E2/E3 trên projector sai kiểu.
 
 Đã xác nhận dataset và mask bằng processor thật trên Colab T4: grid [1,22,40],
 220 token thị giác, assistant JSON + im_end. Kiểm thử CPU không thay thế kết quả
