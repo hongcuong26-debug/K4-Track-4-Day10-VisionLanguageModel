@@ -17,8 +17,8 @@ def yolo_to_box(label, yolo):
     if label not in CLASSES or len(yolo) != 4:
         raise ValueError("Unknown label or malformed YOLO box")
     xc, yc, w, h = yolo
-    if not all(math.isfinite(v) for v in yolo) or w <= 0 or h <= 0:
-        raise ValueError("YOLO coordinates must be finite with positive size")
+    if not all(math.isfinite(v) for v in yolo) or w < 0 or h < 0:
+        raise ValueError("YOLO coordinates must be finite with nonnegative size")
     coords = [(xc-w/2)*1000, (yc-h/2)*1000, (xc+w/2)*1000, (yc+h/2)*1000]
     x1, y1, x2, y2 = [round(max(0, min(1000, v))) for v in coords]
     # Also handle a tiny box rounded onto the right/bottom boundary.

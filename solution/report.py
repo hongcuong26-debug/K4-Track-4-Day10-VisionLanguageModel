@@ -58,6 +58,8 @@ def main():
     architecture = json.loads(Path("work/architecture.json").read_text(encoding="utf-8"))
     stats_path = Path("report/statistical_analysis.json")
     stats = json.loads(stats_path.read_text(encoding="utf-8")) if stats_path.exists() else {}
+    quality_path = Path("report/label_quality.json")
+    quality = json.loads(quality_path.read_text(encoding="utf-8")) if quality_path.exists() else {}
     best = manifest["base"]
     entries = read_jsonl("data/splits/test.jsonl")
     preds = {r["image_id"]: r["raw"] for r in read_jsonl(f"work/{best}_test.jsonl")}
@@ -121,7 +123,8 @@ def main():
          f"Thống kê thật, đã kiểm tra session không giao nhau: `{json.dumps(audit, ensure_ascii=False)}`."),
         ("So sánh E1/E2/E3", f"Cấu hình nền chọn bằng validation là {best}. Đối chiếu F1, CI95, VRAM và phút trong bảng. "
          + "; ".join(comparisons) + ". F1 cao hơn không tự chứng minh lợi ích có ý nghĩa thống kê. "
-         "Batch 1 × tích lũy 8 giữ effective batch 8 và dùng đồng nhất giữa các setup."),
+         "Batch 2 × tích lũy 4 giữ effective batch 8, đúng cấu hình đề và dùng đồng nhất giữa các setup. "
+         "Lượt thử batch 1 đã dừng do kiểm tra box zero-size quá chặt; được giữ riêng, không tính là lượt E1 hoàn chỉnh."),
         ("CI95", "Độ rộng CI95 đo được: " + "; ".join(f"{n}={ev['f1_ci95'][1]-ev['f1_ci95'][0]}" for n, ev in evidence.items()) +
          ". Scorer bootstrap theo ảnh; frame trong một session có tương quan nên CI có thể lạc quan. "
          "Hai CI overlap không chứng minh bằng nhau; cần paired bootstrap chênh lệch F1, tốt hơn là resample session, "
@@ -167,6 +170,8 @@ def main():
     lines += ["## Nhìn lại", "", "Các lỗi đã gặp trong quá trình chạy: torchao cũ làm PEFT không tạo được LoRA; "
               "skip module tên ngắn không giữ được ViT ngoài 4-bit; đếm tham số meta trong ngữ cảnh Accelerate "
               "có thể đếm đôi embedding/lm_head; log subprocess mặc định không hiện đầy đủ trong cell. "
+              f"Audit chất lượng nhãn: `{quality}`. Có một box crack zero-height trong train; "
+              "hàm encode sửa về cạnh tối thiểu 1 đơn vị thay vì xóa nhãn hoặc đổi split. "
               "Những lỗi này được sửa trước khi thu evidence. "
               "Một seed và ba session test giới hạn khả năng suy rộng; CI chưa bao gồm bất định do seed "
               "huấn luyện hoặc chuyển sang cung đường mới."]

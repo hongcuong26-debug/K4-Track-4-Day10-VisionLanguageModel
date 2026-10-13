@@ -6,8 +6,9 @@ from solution.grounding import compute_reward, objects_to_answer, yolo_to_box
 def test_coordinate_roundtrip_and_edge():
     assert yolo_to_box("pothole", [0.5, 0.5, 0.2, 0.4])["bbox_2d"] == [400, 300, 600, 700]
     assert yolo_to_box("crack", [1, 1, 0.00001, 0.00001])["bbox_2d"] == [999, 999, 1000, 1000]
+    assert yolo_to_box("crack", [0.5, 0.5, 0, 0.2])["bbox_2d"] == [500, 400, 501, 600]
     with pytest.raises(ValueError):
-        yolo_to_box("crack", [0.5, 0.5, 0, 0.2])
+        yolo_to_box("crack", [0.5, 0.5, -0.1, 0.2])
 
 
 def test_ordering_is_independent_of_input_order():

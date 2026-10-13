@@ -1,0 +1,40 @@
+{
+  "train": {
+    "zero_size_boxes": {
+      "crack": 1
+    },
+    "out_of_frame_boxes": {
+      "crack": 41,
+      "pothole": 4,
+      "manhole": 4
+    },
+    "zero_size_examples": [
+      {
+        "image_id": "vlcsnap-00058",
+        "label": "crack",
+        "yolo": [
+          0.639062,
+          0.786111,
+          0.003125,
+          0.0
+        ]
+      }
+    ]
+  },
+  "val": {
+    "zero_size_boxes": {},
+    "out_of_frame_boxes": {
+      "crack": 6,
+      "manhole": 2
+    },
+    "zero_size_examples": []
+  },
+  "test": {
+    "zero_size_boxes": {},
+    "out_of_frame_boxes": {
+      "crack": 4,
+      "manhole": 2
+    },
+    "zero_size_examples": []
+  }
+}

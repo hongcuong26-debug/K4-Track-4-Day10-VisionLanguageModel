@@ -64,7 +64,7 @@ def main():
         for name in ("e1", "e2", "e3"):
             checkpoint = Path(args.output_root)/name/"final"
             arguments = ["-m", "solution.run", "--config", f"configs/{name}.yaml", "--name", name,
-                         "--output-root", args.output_root, "--batch-size", "1"]
+                         "--output-root", args.output_root, "--batch-size", "2"]
             if checkpoint.exists():
                 arguments += ["--checkpoint", str(checkpoint)]
             execute(name, arguments)

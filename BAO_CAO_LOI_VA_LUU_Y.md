@@ -55,6 +55,13 @@ Nguồn đối chiếu:
     Hàm should_convert_module kiểm tra tên đầy đủ hoặc tiền tố đầy đủ; phải thêm
     `"model.visual"` vào skip list. Mã kiểm tra mọi module vision sau khi nạp,
     dừng ngay khi phát hiện Linear4bit để tránh train E2/E3 trên projector sai kiểu.
+15. **Nhãn zero-size trong dataset thật.** Ảnh train `vlcsnap-00058` có một box
+    crack với YOLO `[0.639062, 0.786111, 0.003125, 0.0]`. Bộ chuẩn bị dữ liệu
+    chấp nhận nhãn này. Hàm chuyển đổi phải cho phép size=0 và sửa cạnh về ít
+    nhất 1 đơn vị norm1000 theo quy ước đề; không loại ảnh/box khỏi split.
+    Lượt thử E1 batch 1 dừng sau 11 bước do kiểm tra quá chặt, được giữ riêng.
+    Audit còn ghi 49 box ngoài khung ở train, 8 ở val, 6 ở test; scorer dùng
+    GT chưa clip còn nhãn SFT được clip theo đề. Chi tiết ở `report/label_quality.json`.
 
 Đã xác nhận dataset và mask bằng processor thật trên Colab T4: grid [1,22,40],
 220 token thị giác, assistant JSON + im_end. Kiểm thử CPU không thay thế kết quả
