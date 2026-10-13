@@ -56,6 +56,8 @@ def main():
             raise ValueError("Mixed dataset versions")
     manifest = json.loads(Path("work/e4_manifest.json").read_text(encoding="utf-8"))
     architecture = json.loads(Path("work/architecture.json").read_text(encoding="utf-8"))
+    stats_path = Path("report/statistical_analysis.json")
+    stats = json.loads(stats_path.read_text(encoding="utf-8")) if stats_path.exists() else {}
     best = manifest["base"]
     entries = read_jsonl("data/splits/test.jsonl")
     preds = {r["image_id"]: r["raw"] for r in read_jsonl(f"work/{best}_test.jsonl")}
@@ -64,7 +66,7 @@ def main():
     wrong_scale = evaluate(entries, preds, coord="pixel")
     Path("work/wrong_scale.json").write_text(json.dumps(wrong_scale, indent=2), encoding="utf-8")
     lines = [f"Họ tên: {args.student_name}", f"`dataset_version`: {audit['dataset_version']}", "",
-             "Báo cáo nháp sinh từ kết quả thật; cần tự kiểm tra nhận định và bổ sung quan sát trước khi nộp.", "",
+             "Bảng số liệu đọc trực tiếp từ evidence do scorer của đề sinh; nhận định phân biệt số đo và giả thuyết.", "",
              "## Bảng tổng hợp", "",
              "| Mã | Tham số train | VRAM GB | Phút | F1 | CI95 | FP/ảnh | pothole | crack | manhole |",
              "|---|---:|---:|---:|---:|---|---:|---:|---:|---:|"]
@@ -80,6 +82,17 @@ def main():
     e0_errors = Counter("parse_invalid" if parse_output(raw) is None else
                         "valid_empty" if not parse_output(raw) else "valid_nonempty" for raw in e0_preds.values())
     example_id = next((k for k, v in e0_preds.items() if parse_output(v) is None), next(iter(e0_preds)))
+    e0_fn = evidence['e0']['micro']['fn']
+    e0_fp = evidence['e0']['micro']['fp']
+    e0_worst = max(CLASSES, key=lambda c: evidence['e0']['per_class'][c]['fn'])
+    comparisons = []
+    for first, second in (("e1", "e2"), ("e2", "e3")):
+        a, b = evidence[first], evidence[second]
+        comparisons.append(f"{second}−{first}: ΔF1={b['micro']['f1']-a['micro']['f1']:.6f}, "
+            f"ΔVRAM={b['meta']['peak_vram_gb']-a['meta']['peak_vram_gb']:.6f} GB, "
+            f"Δphút={b['meta']['train_minutes']-a['meta']['train_minutes']:.6f}")
+    low, full = evidence['e4_data_0.1'], evidence['e4_data_1.0']
+    overlap = max(low['f1_ci95'][0], full['f1_ci95'][0]) <= min(low['f1_ci95'][1], full['f1_ci95'][1])
     questions = [
         ("Kiến trúc", "Luồng: ViT trích đặc trưng → merger/DeepStack ánh xạ sang chiều LLM → LLM sinh JSON autoregressive. "
          "E1 cập nhật LoRA LLM (252 module); E2 thêm toàn bộ merger và DeepStack float32; E3 thêm 96 module ViT. "
@@ -87,7 +100,10 @@ def main():
         ("E0", f"parse_valid_rate = {evidence['e0']['parse_valid_rate']}. Thống kê output: {dict(e0_errors)}. "
          "Scorer chấp nhận markdown fence và trích JSON trong văn bản, nên lời dẫn chưa chắc là lỗi parse. "
          f"Ví dụ ảnh {example_id}:\n```text\n{e0_preds[example_id]}\n```\n"
-         "Cần tự xem output và ảnh để xác định hai lỗi phổ biến nhất về nhãn/định vị; thống kê cú pháp không đủ để kết luận."),
+         f"Hai loại lỗi kiểm chứng bằng matching của scorer: bỏ sót {e0_fn} box GT và sinh {e0_fp} box "
+         f"không khớp đúng lớp/IoU≥0.5. Lớp bị bỏ sót nhiều nhất theo số đếm là {e0_worst}, "
+         f"FN={evidence['e0']['per_class'][e0_worst]['fn']}. Một FP có thể là sai lớp, sai vị trí hoặc box thừa; "
+         "không đồng nhất tất cả FP với hallucination."),
         ("Thang 0–1000", f"Cùng dự đoán {best}, chấm đúng norm1000 F1={best_ev['micro']['f1']}, "
          f"cố ý chấm sai pixel F1={wrong_scale['micro']['f1']}. Không huấn luyện lại. "
          "x_pixel=x_norm×width/1000 và y_pixel=y_norm×height/1000; nhầm thang làm đổi vị trí/kích thước và giảm IoU."),
@@ -104,22 +120,34 @@ def main():
          "Gom theo session giảm rò rỉ đó, nhưng không chứng minh mọi session độc lập hoàn toàn. "
          f"Thống kê thật, đã kiểm tra session không giao nhau: `{json.dumps(audit, ensure_ascii=False)}`."),
         ("So sánh E1/E2/E3", f"Cấu hình nền chọn bằng validation là {best}. Đối chiếu F1, CI95, VRAM và phút trong bảng. "
-         "Cần tự chọn đánh đổi triển khai từ số đo này; F1 cao hơn không tự chứng minh lợi ích có ý nghĩa thống kê. "
+         + "; ".join(comparisons) + ". F1 cao hơn không tự chứng minh lợi ích có ý nghĩa thống kê. "
          "Batch 1 × tích lũy 8 giữ effective batch 8 và dùng đồng nhất giữa các setup."),
         ("CI95", "Độ rộng CI95 đo được: " + "; ".join(f"{n}={ev['f1_ci95'][1]-ev['f1_ci95'][0]}" for n, ev in evidence.items()) +
          ". Scorer bootstrap theo ảnh; frame trong một session có tương quan nên CI có thể lạc quan. "
          "Hai CI overlap không chứng minh bằng nhau; cần paired bootstrap chênh lệch F1, tốt hơn là resample session, "
-         "và nhiều seed train để kết luận mạnh hơn."),
+         "và nhiều seed train để kết luận mạnh hơn. Kết quả paired bootstrap theo ảnh và session ở bảng bổ sung bên dưới. "
+         f"Tập test chỉ có {audit['test']['n_sessions']} session, nên cluster CI cũng có độ phân giải rất hạn chế."),
         ("Lỗi theo lớp", f"Lớp có F1 thấp nhất ở {best}: {worst}, F1={best_ev['per_class'][worst]['f1']}. "
          "Xem 6 ảnh bên dưới để phân biệt bỏ sót, nhầm lớp và sai tọa độ. "
+         f"Diện tích box trung vị (% khung hình) đo từ GT test: `{stats.get('median_box_area_percent', {})}`. "
          "Box nhỏ và mất chi tiết sau resize/merging là giả thuyết cần đối chiếu ảnh, không phải nguyên nhân đã được chứng minh."),
         ("E4", f"Chỉ đổi train_fraction giữa 0.1 và 1.0 trên nền {best}; "
          f"manifest lưu hai config: {manifest['configs']}. Số bước, LR, rank, seed và effective batch giữ nguyên. "
          "10% được chọn bằng shuffle seed cố định; 100% tái dùng chính checkpoint/prediction nền. "
          "Đây là so sánh cùng ngân sách optimizer steps, khiến 10% được lặp nhiều epoch hơn. "
-         "Đối chiếu CI95 trong bảng và tránh suy ra khác biệt có ý nghĩa chỉ từ overlap.")]
+         f"F1(10%)={low['micro']['f1']}, F1(100%)={full['micro']['f1']}; "
+         f"ΔF1(10%−100%)={low['micro']['f1']-full['micro']['f1']}; CI95 riêng có overlap={overlap}. "
+         "Không suy ra khác biệt có ý nghĩa chỉ từ overlap; dùng paired CI và ghi rõ đây là một seed.")]
     for i, (title, answer) in enumerate(questions, 1):
         lines += ["", f"### Câu {i} — {title}", "", answer]
+    if stats:
+        lines += ["", "## Paired bootstrap bổ sung", "",
+                  "2.000 lượt, seed=0; cùng một tập ảnh/session được lấy mẫu cho cả hai model. "
+                  "Đây là phân tích bổ sung, không thay CI95 do scorer của đề sinh.", "",
+                  "| Chênh lệch | ΔF1 | CI95 theo ảnh | CI95 theo session |",
+                  "|---|---:|---|---|"]
+        for pair, values in stats.get('paired_f1_differences', {}).items():
+            lines.append(f"| {pair} | {values['delta_f1']:.6f} | {values['image_ci95']} | {values['session_ci95']} |")
     lines += ["", "## Ảnh minh họa", "", "GT xanh lá; dự đoán đỏ. Ba ảnh ít lỗi nhất và ba ảnh nhiều lỗi nhất.", ""]
     for fig in figures:
         lines += [f"![{fig['image_id']}]({fig['path']})", f"TP={fig['tp']}; FP+FN={fig['fp_plus_fn']}", ""]
@@ -136,8 +164,12 @@ def main():
                   f"Output rỗng {empty}/311; output có box ≥90% diện tích {giant}/311. "
                   "Đây là chỉ báo reward hacking cần đối chiếu GT; output rỗng không mặc nhiên là gian lận. "
                   "Log train/reward nằm ở checkpoint Drive. Chưa thể suy ra khác biệt có ý nghĩa từ CI overlap.", ""]
-    lines += ["## Nhìn lại", "", "Cần bổ sung nhận xét cá nhân về lỗi thực tế. "
-              "Các CI này chưa bao gồm bất định do seed huấn luyện hoặc thay đổi cung đường."]
+    lines += ["## Nhìn lại", "", "Các lỗi đã gặp trong quá trình chạy: torchao cũ làm PEFT không tạo được LoRA; "
+              "skip module tên ngắn không giữ được ViT ngoài 4-bit; đếm tham số meta trong ngữ cảnh Accelerate "
+              "có thể đếm đôi embedding/lm_head; log subprocess mặc định không hiện đầy đủ trong cell. "
+              "Những lỗi này được sửa trước khi thu evidence. "
+              "Một seed và ba session test giới hạn khả năng suy rộng; CI chưa bao gồm bất định do seed "
+              "huấn luyện hoặc chuyển sang cung đường mới."]
     Path(args.output).write_text("\n".join(lines)+"\n", encoding="utf-8")
     print(f"Wrote {args.output}; review qualitative observations before submission")
 
