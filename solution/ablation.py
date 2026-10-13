@@ -30,9 +30,16 @@ def main():
                     values=[0.1, 1.0], configs={"0.1": changed, "1.0": baseline},
                     baseline_checkpoint=str(checkpoint), baseline_predictions=f"work/{best}_test.jsonl")
     Path("work/e4_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    subprocess.run([sys.executable, "-m", "solution.run", "--config", f"configs/{best}.yaml",
+    arguments = [sys.executable, "-m", "solution.run", "--config", f"configs/{best}.yaml",
                     "--name", "e4_data_0.1", "--train-fraction", "0.1",
-                    "--batch-size", str(baseline["batch_size"]), "--output-root", args.output_root], check=True)
+                    "--batch-size", str(baseline["batch_size"]), "--output-root", args.output_root]
+    low_checkpoint = Path(args.output_root) / "e4_data_0.1" / "final"
+    if low_checkpoint.exists():
+        saved = json.loads((low_checkpoint / "run.json").read_text(encoding="utf-8"))
+        if saved["config"] != changed or saved["completed_steps"] != baseline["max_steps"]:
+            raise ValueError("Existing E4 checkpoint does not match the selected ablation")
+        arguments += ["--checkpoint", str(low_checkpoint)]
+    subprocess.run(arguments, check=True)
 
 
 if __name__ == "__main__":
