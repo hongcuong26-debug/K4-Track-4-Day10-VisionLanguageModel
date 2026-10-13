@@ -9,7 +9,9 @@ def main():
     config = AutoConfig.from_pretrained("Qwen/Qwen3-VL-4B-Instruct")
     with init_empty_weights():
         model = Qwen3VLForConditionalGeneration(config)
-        model.tie_weights()
+    # Tie outside Accelerate's parameter-registration hook: otherwise the hook
+    # can wrap aliases in separate Parameters and double-count the lm_head.
+    model.tie_weights()
     counts = dict(vision_backbone=0, projector=0, language_and_embedding=0, total=0)
     for name, param in model.named_parameters():
         n = param.numel()
