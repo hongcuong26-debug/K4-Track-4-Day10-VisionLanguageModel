@@ -1,0 +1,350 @@
+[
+  {
+    "path": "report/figures/predictions/e0_1.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h08m25s146",
+    "tp": 1,
+    "fp_plus_fn": 0,
+    "raw": "[{\"label\":\"crack\",\"bbox_2d\": [457, 520, 550, 750]}]",
+    "ground_truth": [
+      {
+        "label": "crack",
+        "bbox": [
+          468.75,
+          519.4435000000001,
+          545.312,
+          788.8885
+        ]
+      }
+    ],
+    "matches": {
+      "pothole": [
+        0,
+        0,
+        0
+      ],
+      "crack": [
+        1,
+        0,
+        0
+      ],
+      "manhole": [
+        0,
+        0,
+        0
+      ],
+      "other": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "path": "report/figures/predictions/e0_2.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h11m35s391",
+    "tp": 1,
+    "fp_plus_fn": 0,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\": [497, 735, 620, 797]}]",
+    "ground_truth": [
+      {
+        "label": "manhole",
+        "bbox": [
+          481.24999999999994,
+          727.7785,
+          637.5,
+          816.6675
+        ]
+      }
+    ],
+    "matches": {
+      "pothole": [
+        0,
+        0,
+        0
+      ],
+      "crack": [
+        0,
+        0,
+        0
+      ],
+      "manhole": [
+        1,
+        0,
+        0
+      ],
+      "other": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "path": "report/figures/predictions/e0_3.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h14m30s019",
+    "tp": 1,
+    "fp_plus_fn": 0,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\": [93, 607, 253, 675]}]",
+    "ground_truth": [
+      {
+        "label": "manhole",
+        "bbox": [
+          90.625,
+          608.3325000000001,
+          271.875,
+          699.9995
+        ]
+      }
+    ],
+    "matches": {
+      "pothole": [
+        0,
+        0,
+        0
+      ],
+      "crack": [
+        0,
+        0,
+        0
+      ],
+      "manhole": [
+        1,
+        0,
+        0
+      ],
+      "other": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "path": "report/figures/predictions/e0_4.jpg",
+    "image_id": "vlcsnap-2025-02-19-17h03m28s017",
+    "tp": 0,
+    "fp_plus_fn": 10,
+    "raw": "[{\"label\":\"pothole\",\"bbox_2d\": [457, 638, 550, 670]}, {\"label\":\"pothole\",\"bbox_2d\": [400, 625, 450, 645]}, {\"label\":\"pothole\",\"bbox_2d\": [462, 555, 495, 570]}, {\"label\":\"pothole\",\"bbox_2d\": [462, 580, 495, 595]}, {\"label\":\"manhole\",\"bbox_2d\": [457, 638, 550, 670]}]",
+    "ground_truth": [
+      {
+        "label": "pothole",
+        "bbox": [
+          407.8125,
+          608.333,
+          432.8115,
+          658.3330000000001
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          496.87550000000005,
+          624.9995,
+          556.2505,
+          666.6664999999999
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          418.75,
+          536.111,
+          445.312,
+          561.1109999999999
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          473.43800000000005,
+          561.1105000000001,
+          500.0,
+          580.5555
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          464.06199999999995,
+          538.8885,
+          500.0,
+          572.2215000000001
+        ]
+      }
+    ],
+    "matches": {
+      "pothole": [
+        0,
+        4,
+        5
+      ],
+      "crack": [
+        0,
+        0,
+        0
+      ],
+      "manhole": [
+        0,
+        1,
+        0
+      ],
+      "other": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "path": "report/figures/predictions/e0_5.jpg",
+    "image_id": "vlcsnap-2025-02-19-17h03m29s526",
+    "tp": 0,
+    "fp_plus_fn": 8,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\": [387, 500, 409, 520]}, {\"label\":\"manhole\",\"bbox_2d\": [399, 500, 420, 520]}, {\"label\":\"manhole\",\"bbox_2d\": [489, 640, 543, 670]}, {\"label\":\"manhole\",\"bbox_2d\": [489, 640, 543, 670]}]",
+    "ground_truth": [
+      {
+        "label": "pothole",
+        "bbox": [
+          382.812,
+          608.3335,
+          442.188,
+          655.5565
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          403.125,
+          563.8895,
+          434.375,
+          605.5564999999999
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          487.5,
+          633.3325,
+          579.688,
+          749.9995
+        ]
+      },
+      {
+        "label": "crack",
+        "bbox": [
+          267.188,
+          580.5555,
+          587.5,
+          813.8885
+        ]
+      }
+    ],
+    "matches": {
+      "pothole": [
+        0,
+        0,
+        3
+      ],
+      "crack": [
+        0,
+        0,
+        1
+      ],
+      "manhole": [
+        0,
+        4,
+        0
+      ],
+      "other": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "path": "report/figures/predictions/e0_6.jpg",
+    "image_id": "vlcsnap-2025-02-19-17h03m02s980",
+    "tp": 0,
+    "fp_plus_fn": 8,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\": [287, 572, 347, 602], \"bbox_2d\": [367, 572, 467, 619]}, {\"label\":\"crack\",\"bbox_2d\": [0, 670, 1000, 787]}]",
+    "ground_truth": [
+      {
+        "label": "pothole",
+        "bbox": [
+          301.56300000000005,
+          719.444,
+          365.625,
+          772.222
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          421.87450000000007,
+          666.6675,
+          512.4995,
+          744.4445
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          251.56250000000003,
+          625.0,
+          320.31149999999997,
+          669.444
+        ]
+      },
+      {
+        "label": "pothole",
+        "bbox": [
+          409.3755,
+          619.4435,
+          460.93850000000003,
+          663.8885
+        ]
+      },
+      {
+        "label": "crack",
+        "bbox": [
+          398.43799999999993,
+          608.333,
+          520.312,
+          791.6669999999999
+        ]
+      },
+      {
+        "label": "crack",
+        "bbox": [
+          245.312,
+          613.889,
+          382.81200000000007,
+          791.667
+        ]
+      }
+    ],
+    "matches": {
+      "pothole": [
+        0,
+        0,
+        4
+      ],
+      "crack": [
+        0,
+        1,
+        2
+      ],
+      "manhole": [
+        0,
+        1,
+        0
+      ],
+      "other": [
+        0,
+        0,
+        0
+      ]
+    }
+  }
+]
