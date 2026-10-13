@@ -86,23 +86,26 @@ def train(model, processor, config, entries, directory, dataset_version):
     return run
 
 
-def predict(model, processor, entries, output, max_new_tokens=256):
-    """One image at a time limits T4 VRAM; keep raw output for audit."""
+def predict(model, processor, entries, output, max_new_tokens=256, batch_size=4):
+    """Left-padded image batches; keep untouched output for each image ID."""
     model.eval()
     model.config.use_cache = True
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8") as file:
-        for i, entry in enumerate(entries):
-            inputs = processor.apply_chat_template(messages(open_image(entry)), tokenize=True,
-                add_generation_prompt=True, return_dict=True, return_tensors="pt").to("cuda")
+        for start in range(0, len(entries), batch_size):
+            batch_entries = entries[start:start+batch_size]
+            conversations = [messages(open_image(entry)) for entry in batch_entries]
+            inputs = processor.apply_chat_template(conversations, tokenize=True,
+                add_generation_prompt=True, padding=True,
+                return_dict=True, return_tensors="pt").to("cuda")
             with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
                 generated = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
-            raw = processor.tokenizer.decode(generated[0, inputs["input_ids"].shape[1]:],
-                                              skip_special_tokens=True)
-            file.write(json.dumps({"image_id": entry["image_id"], "raw": raw}, ensure_ascii=False)+"\n")
+            raw_outputs = processor.tokenizer.batch_decode(
+                generated[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            for entry, raw in zip(batch_entries, raw_outputs):
+                file.write(json.dumps({"image_id": entry["image_id"], "raw": raw}, ensure_ascii=False)+"\n")
             file.flush()
-            if (i+1) % 25 == 0:
-                print(f"inference {i+1}/{len(entries)}", flush=True)
+            print(f"inference {start+len(batch_entries)}/{len(entries)}", flush=True)
 
 
 def score(pred, name, split, run):
