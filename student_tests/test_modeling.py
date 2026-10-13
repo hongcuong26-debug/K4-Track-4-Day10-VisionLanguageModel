@@ -3,7 +3,7 @@ import copy
 import torch
 import pytest
 from transformers import Qwen3VLConfig, Qwen3VLForConditionalGeneration
-from solution.modeling import apply_setup, is_projector, load_checkpoint, save_checkpoint
+from solution.modeling import SKIP_MODULES, apply_setup, is_projector, load_checkpoint, save_checkpoint
 
 
 def tiny_model():
@@ -20,6 +20,16 @@ def tiny_model():
 def setup(name):
     return dict(name=name, lora=dict(r=2, alpha=4, dropout=0.05,
         targets="llm+vit" if name == "E3" else "llm"), train_projector=name != "E1")
+
+
+def test_quantization_skip_prefix_covers_all_vision_linears():
+    from transformers.quantizers.quantizers_utils import should_convert_module
+    model = tiny_model()
+    vision_linears = [n for n, m in model.named_modules()
+                      if "visual" in n and isinstance(m, torch.nn.Linear)]
+    assert vision_linears
+    assert all(not should_convert_module(n, list(SKIP_MODULES)) for n in vision_linears)
+    assert should_convert_module("model.language_model.layers.0.self_attn.q_proj", list(SKIP_MODULES))
 
 
 @pytest.mark.parametrize("name,expected", [("E1", 252), ("E2", 252), ("E3", 348)])

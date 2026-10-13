@@ -8,6 +8,7 @@ from transformers import AutoProcessor, BitsAndBytesConfig, Qwen3VLForConditiona
 from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
 
 PROJECTOR = ("visual.merger", "visual.deepstack_merger_list")
+SKIP_MODULES = ("visual", "model.visual", "lm_head")
 LLM_PATTERN = r"model\.language_model\.layers\.\d+\.(?:self_attn\.(?:q_proj|k_proj|v_proj|o_proj)|mlp\.(?:gate_proj|up_proj|down_proj))"
 VIT_PATTERN = r"model\.visual\.blocks\.\d+\.(?:attn\.(?:qkv|proj)|mlp\.(?:linear_fc1|linear_fc2))"
 
@@ -24,7 +25,7 @@ def load_base(model_id):
                               bnb_4bit_use_double_quant=True,
                               # Transformers 5.19 matches full module prefixes;
                               # "visual" alone does not match "model.visual".
-                              llm_int8_skip_modules=["visual", "model.visual", "lm_head"])
+                              llm_int8_skip_modules=list(SKIP_MODULES))
     model = Qwen3VLForConditionalGeneration.from_pretrained(
         model_id, quantization_config=quant, dtype=torch.float16,
         device_map={"": 0}, attn_implementation="sdpa")

@@ -96,7 +96,7 @@ def predict(model, processor, entries, output, max_new_tokens=256, batch_size=4)
             batch_entries = entries[start:start+batch_size]
             conversations = [messages(open_image(entry)) for entry in batch_entries]
             inputs = processor.apply_chat_template(conversations, tokenize=True,
-                add_generation_prompt=True, padding=True,
+                add_generation_prompt=True, processor_kwargs={"padding": True},
                 return_dict=True, return_tensors="pt").to("cuda")
             with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
                 generated = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
