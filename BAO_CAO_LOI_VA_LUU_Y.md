@@ -63,6 +63,18 @@ Nguồn đối chiếu:
     Audit còn ghi 49 box ngoài khung ở train, 8 ở val, 6 ở test; scorer dùng
     GT chưa clip còn nhãn SFT được clip theo đề. Chi tiết ở `report/label_quality.json`.
 
+16. **Interrupt Colab và subprocess nền.** Dừng cell monitor bằng nút stop
+    đã gửi SIGINT đến cả nhóm tiến trình của kernel, làm lượt E1 batch 2 dừng
+    trước 300 bước. Giữ lại log/checkpoint ở thư mục trial riêng; không coi
+    checkpoint bước 100 là E1 hoàn chỉnh. Popen mới dùng start_new_session=True
+    để tách train khỏi nhóm tiến trình của kernel. Adapter cũ chưa có optimizer/RNG,
+    nên lượt mới bắt đầu lại từ model gốc để không ghi sai bằng chứng resume.
+17. **Tải bằng chứng từ Colab.** files.download và liên kết tải chưa chuyển
+    được file về máy qua kết nối Chrome hiện tại. E0 test được chuyển nguyên
+    byte qua gzip/base64 trong output notebook, xác nhận SHA256 và chấm lại
+    bằng scorer gốc. F1/matching/CI khớp; mean IoU khác 3e-16 do thứ tự cộng số
+    thực. Không thay output của mô hình bằng ground truth.
+
 Đã xác nhận dataset và mask bằng processor thật trên Colab T4: grid [1,22,40],
 220 token thị giác, assistant JSON + im_end. Kiểm thử CPU không thay thế kết quả
 huấn luyện/suy luận đủ tập test hoặc bằng chứng GRPO.
