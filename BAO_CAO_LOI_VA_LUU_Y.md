@@ -43,5 +43,14 @@ Nguồn đối chiếu:
 - [Qwen3-VL Transformers](https://huggingface.co/docs/transformers/model_doc/qwen3_vl)
 - [GRPO docs đúng tag v1.9.2](https://github.com/huggingface/trl/blob/v1.9.2/docs/source/grpo_trainer.md)
 
-Mã huấn luyện, BitsAndBytes và GRPO chưa được kiểm chứng bằng GPU tại máy này.
-Các kiểm thử CPU không thay thế chạy thực trên Colab T4.
+12. **Colab thực tế (14/10/2026).** T4 dùng torch 2.11.0+cu130/Python 3.13,
+    có torchao 0.10.0 cài sẵn. PEFT 0.21.2 từ chối torchao <0.16.0 ngay khi
+    tạo LoRA dù bài này dùng BitsAndBytes. Gỡ riêng torchao trong runtime đã
+    giải quyết xung đột; 83 test pass, 1 skip trước khi tải dữ liệu.
+13. **Log subprocess trong notebook.** Dùng Popen với stdout=PIPE/stderr=STDOUT
+    rồi print từng dòng để nhìn thấy loss, tiến độ và traceback trong output cell.
+    subprocess.run mặc định có thể đưa log về kernel console thay vì output cell.
+
+Đã xác nhận dataset và mask bằng processor thật trên Colab T4: grid [1,22,40],
+220 token thị giác, assistant JSON + im_end. Kiểm thử CPU không thay thế kết quả
+huấn luyện/suy luận đủ tập test hoặc bằng chứng GRPO.
