@@ -1,0 +1,44 @@
+[
+  {
+    "path": "report/figures/predictions/e1_1.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h13m52s540",
+    "tp": 2,
+    "fp_plus_fn": 0,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\":[178,539,294,603]},{\"label\":\"manhole\",\"bbox_2d\":[609,561,684,617]}]"
+  },
+  {
+    "path": "report/figures/predictions/e1_2.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h13m55s630",
+    "tp": 2,
+    "fp_plus_fn": 0,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\":[120,583,261,653]},{\"label\":\"manhole\",\"bbox_2d\":[634,608,750,681]}]"
+  },
+  {
+    "path": "report/figures/predictions/e1_3.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h13m56s767",
+    "tp": 2,
+    "fp_plus_fn": 0,
+    "raw": "[{\"label\":\"manhole\",\"bbox_2d\":[31,661,200,742]},{\"label\":\"manhole\",\"bbox_2d\":[661,683,800,761]}]"
+  },
+  {
+    "path": "report/figures/predictions/e1_4.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h30m28s990",
+    "tp": 1,
+    "fp_plus_fn": 11,
+    "raw": "[{\"label\":\"crack\",\"bbox_2d\":[417,450,531,550]},{\"label\":\"crack\",\"bbox_2d\":[245,508,419,633]},{\"label\":\"crack\",\"bbox_2d\":[419,550,508,650]},{\"label\":\"crack\",\"bbox_2d\":[581,558,731,708]},{\"label\":\"crack\",\"bbox_2d\":[381,650,500,783]},{\"label\":\"crack\",\"bbox_2d\":[144,656,381,758]}]"
+  },
+  {
+    "path": "report/figures/predictions/e1_5.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h07m46s200",
+    "tp": 0,
+    "fp_plus_fn": 10,
+    "raw": "[{\"label\":\"crack\",\"bbox_2d\":[384,383,459,450]},{\"label\":\"crack\",\"bbox_2d\":[461,400,531,467]},{\"label\":\"crack\",\"bbox_2d\":[531,417,600,483]},{\"label\":\"crack\",\"bbox_2d\":[600,433,669,500]},{\"label\":\"crack\",\"bbox_2d\":[669,450,736,522]},{\"label\":\"crack\",\"bbox_2d\":[736,467,803,539]},{\"label\":\"crack\",\"bbox_2d\":[803,483,870,556]},{\"label\":\"crack\",\"bbox_2d\":[870,500,936,572]},{\"label\":\"crack\",\"bbox_2d\":[936,517,1000,592]}]"
+  },
+  {
+    "path": "report/figures/predictions/e1_6.jpg",
+    "image_id": "vlcsnap-2025-02-18-23h30m29s192",
+    "tp": 1,
+    "fp_plus_fn": 10,
+    "raw": "[{\"label\":\"crack\",\"bbox_2d\":[469,467,534,533]},{\"label\":\"crack\",\"bbox_2d\":[469,533,533,608]},{\"label\":\"crack\",\"bbox_2d\":[469,608,533,767]},{\"label\":\"crack\",\"bbox_2d\":[533,608,684,767]},{\"label\":\"pothole\",\"bbox_2d\":[359,517,444,583]},{\"label\":\"pothole\",\"bbox_2d\":[469,533,533,608]},{\"label\":\"pothole\",\"bbox_2d\":[469,608,533,767]}]"
+  }
+]

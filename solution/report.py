@@ -29,7 +29,7 @@ def illustrations(entries, predictions, name):
         draw_boxes(image, pred, "red")
         path = out / f"{name}_{i+1}.jpg"
         image.save(path)
-        records.append(dict(path=str(path), image_id=entry["image_id"],
+        records.append(dict(path=path.as_posix(), image_id=entry["image_id"],
                             tp=-neg_tp, fp_plus_fn=errors, raw=predictions[entry["image_id"]]))
     (out / "manifest.json").write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
     return records
