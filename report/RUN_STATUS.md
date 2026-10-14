@@ -11,3 +11,16 @@ Notebook: https://colab.research.google.com/drive/16oFysX3Xsyf-6nn93L04yczaPDRwx
 - Lượt PID 18771 bị ngắt khi dừng ô monitor của notebook; Colab gửi SIGINT cả nhóm tiến trình. Có checkpoint bước 100 nhưng chưa lưu optimizer/RNG, nên không dùng để giả vờ resume chính xác. Nhật ký và checkpoint được giữ trong `e1_batch2_interrupted_trial`. Pipeline mới PID 25005 được chạy với `start_new_session=True`, bắt đầu lại E1 từ model gốc. Đã mở hộp thoại mount Drive và đang chờ xác nhận quyền truy cập để sao lưu checkpoint.
 
 Chưa đủ điều kiện nộp cho đến khi có E1–E4 hoàn chỉnh, báo cáo/ảnh dự đoán thật và checker đạt 0 FAIL.
+
+## Kiểm tra lại ngày 14/10/2026
+
+`check_submission.py` trên repo hiện trả về **5 FAIL, 0 WARN**: thiếu evidence E1,
+E2, E3, E4 và REPORT còn placeholder. E0, dataset_version, 20 commit và danh sách
+file được track đều đạt kiểm tra.
+
+Kết nối lại Colab đã cấp runtime T4 mới. Kiểm tra trong kernel xác nhận thư mục
+repository và `/content/day10-vlm/runs` đều không còn; không có file evidence
+hay `lab_progress.json` của phiên trước trên runtime mới. Vì vậy không thể xác
+nhận hoặc lấy lại E1–E4 từ phiên cũ. E0 và sáu ảnh đã được lưu về máy/GitHub nên
+vẫn còn. Quyền kết nối Drive chưa được xác nhận; phải thiết lập sao lưu trước
+khi chạy lại các lượt dài để tránh mất checkpoint lần nữa.
