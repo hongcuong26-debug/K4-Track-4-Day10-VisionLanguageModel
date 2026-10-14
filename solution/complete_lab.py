@@ -7,7 +7,7 @@ import time
 import zipfile
 import shutil
 from pathlib import Path
-from solution.portable_results import emit_snapshot
+from solution.portable_results import emit_snapshot, restore_snapshot
 
 
 def completed_result(name, output_root):
@@ -77,6 +77,20 @@ def main():
     ap.add_argument("--output-root", default="work/runs")
     ap.add_argument("--student-name", required=True)
     args = ap.parse_args()
+    # A fresh VM can recover completed results from the public repository,
+    # without assuming that the discarded VM's model weights survived.
+    archives = Path('report/snapshots/manifest.json')
+    if archives.exists() and not (Path(args.output_root)/'e1/final/run.json').exists():
+        saved = json.loads(archives.read_text(encoding='utf-8'))
+        if saved['version'] != 1:
+            raise ValueError('Unsupported saved result manifest version')
+        snapshot = saved['snapshots'][-1]
+        filename = snapshot['file']
+        if Path(filename).name != filename or not filename.endswith('.b64'):
+            raise ValueError('Unexpected saved snapshot filename')
+        restored = restore_snapshot((archives.parent/filename).read_text(encoding='ascii'),
+                                    snapshot['sha256'], args.output_root)
+        print(f'RESTORED {restored} result files from {filename}; raw scores will be verified', flush=True)
     Path("work/lab_logs").mkdir(parents=True, exist_ok=True)
     progress_path = Path("work/lab_progress.json")
     progress = dict(status="running", started_utc=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),

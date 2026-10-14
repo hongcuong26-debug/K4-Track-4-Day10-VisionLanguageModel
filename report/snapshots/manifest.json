@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "snapshots": [
+    {
+      "file": "e1.b64",
+      "sha256": "534aaf7399072d40924e4b258dcf900d79a50bcbf0cd32ada4e0a0e33dc9a20e",
+      "completed": ["e1"]
+    }
+  ]
+}

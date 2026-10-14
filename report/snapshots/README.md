@@ -10,3 +10,7 @@ khóa API hay trọng số. Dùng để khôi phục kết quả khi runtime Col
 
 Khôi phục từ thư mục gốc repository bằng `solution.portable_results.restore_snapshot`.
 Hàm kiểm tra hash và đường dẫn trước khi ghi; checkpoint trọng số không được khôi phục.
+
+`solution.complete_lab` tự khôi phục snapshot mới nhất trong `manifest.json`
+khi runtime mới chưa có metadata E1. Sau đó chấm lại dự đoán thô và kiểm tra
+config/metadata trước khi bỏ qua các lượt đã hoàn tất. Không resume train giữa chừng.

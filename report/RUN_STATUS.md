@@ -50,3 +50,29 @@ Dự đoán thô và nhật ký E1 hiện được lưu lâu dài dưới `repor
 `report/training/`, `report/validation/` và `report/snapshots/e1.b64`.
 E2 đang huấn luyện. E2/E3/E4 và REPORT cuối cùng còn chờ kết quả thật;
 bài chưa đủ điều kiện nộp.
+
+## Điểm dừng: Colab hết hạn mức GPU ngày 14/10/2026
+
+Quan sát trực tiếp trước khi kết nối bị gián đoạn: E2 đã hoàn thành 300 bước,
+loss bước cuối 0.4917415976524353, peak allocated VRAM 8.626169856 GB,
+thời gian train 54.96972632063333 phút. Lần theo dõi cuối thấy suy luận
+validation đạt 180/276 ảnh. Chưa xác minh được toàn bộ val/test hoặc F1 E2.
+Các số train này là quan sát từ output đang chạy, chưa có run.json/log đầy đủ
+được chuyển về máy; không dùng làm evidence chấm bài.
+
+Mở lại notebook và bấm kết nối T4, Colab báo:
+“Bạn hiện không thể kết nối với một GPU do hạn mức sử dụng trong Colab.”
+Không mua compute, đổi quyền trình duyệt hoặc tìm cách vượt quota.
+Output ô chạy dài chưa đọc lại được từ notebook đã lưu; bản E0/E1 trên GitHub
+vẫn đầy đủ và đã kiểm chứng. Chưa thể xác nhận checkpoint E2 còn tồn tại.
+
+Khi có GPU hoạt động, chuẩn bị dữ liệu đúng version và khôi phục
+`report/snapshots/e1.b64` bằng hash trong README của thư mục snapshots.
+Pipeline kiểm chứng lại val/test/metadata rồi bỏ qua E1 đã hoàn tất.
+Nếu còn checkpoint cuối E2 thì chỉ chạy inference; nếu checkpoint mất,
+chạy lại E2 từ model gốc đủ 300 bước. Sau đó chạy E3, E4, paired analysis,
+sinh REPORT bằng mã mới nhất và nghiệm thu.
+
+Checker gần nhất còn 4 FAIL: evidence E2, E3, E4 và REPORT có placeholder.
+Kiểm thử gốc: 68 passed, 1 skipped. Kiểm thử gốc cùng phần lời giải:
+94 passed, 1 skipped. `scripts/`, `tests/`, `configs/` vẫn nguyên bản.
