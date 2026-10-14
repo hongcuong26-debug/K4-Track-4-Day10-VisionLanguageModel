@@ -91,21 +91,44 @@ def predict(model, processor, entries, output, max_new_tokens=256, batch_size=4)
     model.eval()
     model.config.use_cache = True
     output.parent.mkdir(parents=True, exist_ok=True)
+    requested_batch_size = batch_size
+    used_batch_sizes = []
+    start = 0
     with output.open("w", encoding="utf-8") as file:
-        for start in range(0, len(entries), batch_size):
+        while start < len(entries):
             batch_entries = entries[start:start+batch_size]
             conversations = [messages(open_image(entry)) for entry in batch_entries]
-            inputs = processor.apply_chat_template(conversations, tokenize=True,
-                add_generation_prompt=True, processor_kwargs={"padding": True},
-                return_dict=True, return_tensors="pt").to("cuda")
-            with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
-                generated = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
+            inputs, generated = None, None
+            oom = False
+            try:
+                inputs = processor.apply_chat_template(conversations, tokenize=True,
+                    add_generation_prompt=True, processor_kwargs={"padding": True},
+                    return_dict=True, return_tensors="pt").to("cuda")
+                with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):
+                    generated = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
+            except torch.cuda.OutOfMemoryError:
+                oom = True
+            if oom:
+                inputs, generated = None, None
+                gc.collect()
+                torch.cuda.empty_cache()
+                if batch_size == 1:
+                    raise torch.cuda.OutOfMemoryError('Inference does not fit even at batch size 1')
+                batch_size = max(1, batch_size//2)
+                print(f'Inference OOM: retry the same images with batch_size={batch_size}', flush=True)
+                continue
             raw_outputs = processor.tokenizer.batch_decode(
                 generated[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
             for entry, raw in zip(batch_entries, raw_outputs):
                 file.write(json.dumps({"image_id": entry["image_id"], "raw": raw}, ensure_ascii=False)+"\n")
             file.flush()
+            used_batch_sizes.append(len(batch_entries))
             print(f"inference {start+len(batch_entries)}/{len(entries)}", flush=True)
+            start += len(batch_entries)
+            del inputs, generated
+    return dict(requested_batch_size=requested_batch_size, effective_batch_size=batch_size,
+                actual_batch_sizes=sorted(set(used_batch_sizes)), do_sample=False,
+                max_new_tokens=max_new_tokens)
 
 
 def score(pred, name, split, run):
@@ -127,6 +150,7 @@ def main():
     ap.add_argument("--checkpoint", help="Inference only; load this saved final checkpoint")
     ap.add_argument("--train-fraction", type=float, default=1.0)
     ap.add_argument("--batch-size", type=int, help="Use 1 for T4 OOM, preserving effective batch")
+    ap.add_argument('--inference-batch-size', type=int, default=4)
     ap.add_argument("--split", choices=["val", "test"], default="test")
     ap.add_argument("--val-only", action="store_true", help="Train and validate, no test scoring")
     a = ap.parse_args()
@@ -134,6 +158,8 @@ def main():
         ap.error("name must be a single filename component")
     if not 0 < a.train_fraction <= 1:
         ap.error("train-fraction must be in (0, 1]")
+    if a.inference_batch_size < 1:
+        ap.error('inference-batch-size must be positive')
     config = yaml.safe_load(Path(a.config).read_text(encoding="utf-8"))
     if config["name"] not in ("E0", "E1", "E2", "E3"):
         ap.error("Use E1/E2/E3 config as E4 base; E5 uses solution.grpo")
@@ -173,7 +199,8 @@ def main():
     for split in splits:
         entries = read_jsonl(f"data/splits/{split}.jsonl")
         pred = Path("work") / f"{a.name}_{split}.jsonl"
-        predict(model, processor, entries, pred, config.get("max_new_tokens", 256))
+        generation = predict(model, processor, entries, pred, config.get("max_new_tokens", 256), a.inference_batch_size)
+        Path(f'work/{a.name}_{split}_generation.json').write_text(json.dumps(generation, indent=2), encoding='utf-8')
         score(pred, a.name, split, run)
 
 

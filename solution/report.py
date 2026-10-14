@@ -114,7 +114,8 @@ def main():
          f"cố ý chấm sai pixel F1={wrong_scale['micro']['f1']}. Không huấn luyện lại. "
          "x_pixel=x_norm×width/1000 và y_pixel=y_norm×height/1000; nhầm thang làm đổi vị trí/kích thước và giảm IoU. "
          "Ví dụ x_norm=750 tương ứng x_pixel=480 trên ảnh rộng 640 pixel. "
-         "Sai số làm tròn một góc không bị clip tối đa 0.5 đơn vị norm, tức 0.32 pixel ngang và 0.18 pixel dọc "
+         "Với box không cần clip hoặc sửa cạnh suy biến, sai số làm tròn một góc tối đa 0.5 đơn vị norm, "
+         "tức 0.32 pixel ngang và 0.18 pixel dọc "
          "trên ảnh 640×360; nhầm cả thang lớn hơn nhiều sai số lượng tử tọa độ này."),
         ("Mask loss", "labels của prompt, token ảnh và padding bằng -100; chỉ suffix assistant và token kết thúc được giám sát. "
          "Model tự dịch labels một vị trí khi tính causal loss, nên không dịch thêm trong collator. "

@@ -26,13 +26,18 @@ def main():
         cmd += ["--meta", f"{key}={run[key]}"]
     subprocess.run(cmd, check=True)
     changed = dict(baseline, train_fraction=0.1)
+    generation_path = Path(f'work/{best}_test_generation.json')
+    generation = json.loads(generation_path.read_text(encoding='utf-8')) if generation_path.exists() else dict(effective_batch_size=4)
+    inference_batch_size = generation['effective_batch_size']
     manifest = dict(base=best, selection_split="val", variable="train_fraction",
                     values=[0.1, 1.0], configs={"0.1": changed, "1.0": baseline},
                     baseline_checkpoint=str(checkpoint), baseline_predictions=f"work/{best}_test.jsonl")
+    manifest['inference_batch_size'] = inference_batch_size
     Path("work/e4_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     arguments = [sys.executable, "-m", "solution.run", "--config", f"configs/{best}.yaml",
                     "--name", "e4_data_0.1", "--train-fraction", "0.1",
-                    "--batch-size", str(baseline["batch_size"]), "--output-root", args.output_root]
+                    "--batch-size", str(baseline["batch_size"]), "--output-root", args.output_root,
+                    '--inference-batch-size', str(inference_batch_size)]
     low_checkpoint = Path(args.output_root) / "e4_data_0.1" / "final"
     if low_checkpoint.exists():
         saved = json.loads((low_checkpoint / "run.json").read_text(encoding="utf-8"))
