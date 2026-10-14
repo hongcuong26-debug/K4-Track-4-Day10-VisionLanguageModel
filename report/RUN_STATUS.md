@@ -24,3 +24,29 @@ hay `lab_progress.json` của phiên trước trên runtime mới. Vì vậy kh�
 nhận hoặc lấy lại E1–E4 từ phiên cũ. E0 và sáu ảnh đã được lưu về máy/GitHub nên
 vẫn còn. Quyền kết nối Drive chưa được xác nhận; phải thiết lập sao lưu trước
 khi chạy lại các lượt dài để tránh mất checkpoint lần nữa.
+
+## Lượt hiện tại: E1 đã hoàn thành
+
+Pipeline khởi động từ model gốc lúc `2026-10-14T04:18:27Z`, trên T4 mới,
+source `aca2e5e`, batch 2 × accumulation 4, 300 optimizer steps. Không mount Drive;
+sau mỗi chặng đã hoàn tất, pipeline xuất gzip/base64 chứa JSON kết quả vào output
+notebook đang lưu trên Drive. Đây là bản sao dự đoán/metadata/log, không phải trọng số.
+
+E1 hoàn thành train và suy luận val/test trước `2026-10-14T05:51:48Z`.
+Đã lưu snapshot lên GitHub cá nhân, pull về máy và xác minh SHA256 payload:
+`534aaf7399072d40924e4b258dcf900d79a50bcbf0cd32ada4e0a0e33dc9a20e`.
+`solution.complete_lab.completed_result('e1', 'work/runs')` trả về `True`:
+đủ 300 bước, config khớp đề, đầy đủ ID val/test không trùng, metadata khớp,
+chấm lại bằng scorer gốc khớp các metric/CI95.
+
+- Tham số trainable: 33030144; peak allocated VRAM: 6.92527104 GB.
+- Thời gian vòng train: 53.60908415115 phút; không gồm tải model và suy luận.
+- Test: 311 ảnh; parse valid 0.9839228295819936; F1 0.2601908065915004.
+- CI95 F1: [0.22383985441310283, 0.2981029810298103].
+- F1 tăng 0.15927337539883984 so với E0, đạt ngưỡng ≥ 0.10.
+- F1 pothole/crack/manhole: 0.1693121693121693 / 0.18636995827538247 / 0.5469387755102041.
+
+Dự đoán thô và nhật ký E1 hiện được lưu lâu dài dưới `report/predictions/`,
+`report/training/`, `report/validation/` và `report/snapshots/e1.b64`.
+E2 đang huấn luyện. E2/E3/E4 và REPORT cuối cùng còn chờ kết quả thật;
+bài chưa đủ điều kiện nộp.
