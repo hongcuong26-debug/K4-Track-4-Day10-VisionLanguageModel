@@ -1,0 +1,13 @@
+{
+  "vision_backbone": 306242560,
+  "projector": 109105152,
+  "language_and_embedding": 4022468096,
+  "total": 4437815808,
+  "patch_size": 16,
+  "spatial_merge_size": 2,
+  "deepstack_visual_indexes": [
+    5,
+    11,
+    17
+  ]
+}

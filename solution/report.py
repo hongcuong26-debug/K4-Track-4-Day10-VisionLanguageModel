@@ -56,6 +56,7 @@ def main():
             raise ValueError("Mixed dataset versions")
     manifest = json.loads(Path("work/e4_manifest.json").read_text(encoding="utf-8"))
     architecture = json.loads(Path("work/architecture.json").read_text(encoding="utf-8"))
+    encoding = json.loads(Path("work/encoding_audit.json").read_text(encoding="utf-8"))
     stats_path = Path("report/statistical_analysis.json")
     stats = json.loads(stats_path.read_text(encoding="utf-8")) if stats_path.exists() else {}
     quality_path = Path("report/label_quality.json")
@@ -70,12 +71,15 @@ def main():
     lines = [f"Họ tên: {args.student_name}", f"`dataset_version`: {audit['dataset_version']}", "",
              "Bảng số liệu đọc trực tiếp từ evidence do scorer của đề sinh; nhận định phân biệt số đo và giả thuyết.", "",
              "## Bảng tổng hợp", "",
-             "| Mã | Tham số train | VRAM GB | Phút | F1 | CI95 | FP/ảnh | pothole | crack | manhole |",
-             "|---|---:|---:|---:|---:|---|---:|---:|---:|---:|"]
+             "| Mã | Setup | Tham số train | VRAM GB | Phút | F1 | CI95 | FP/ảnh | pothole | crack | manhole |",
+             "|---|---|---:|---:|---:|---:|---|---:|---:|---:|---:|"]
+    setups = dict(e0="Zero-shot", e1="LoRA LLM", e2="LoRA LLM + projector",
+                  e3="LoRA LLM + projector + LoRA ViT")
     for name, ev in evidence.items():
         meta = ev["meta"]
         ci = ev["f1_ci95"]
-        values = [name, str(meta.get("trainable_params", 0)), str(meta.get("peak_vram_gb", "—")),
+        setup = setups.get(name, f"{best}: {10 if name == 'e4_data_0.1' else 100}% train" if name.startswith('e4_data_') else 'GRPO')
+        values = [name, setup, str(meta.get("trainable_params", 0)), str(meta.get("peak_vram_gb", "—")),
                   str(meta.get("train_minutes", "—")), str(ev["micro"]["f1"]), str(ci),
                   str(ev["fp_per_image"])] + [str(ev["per_class"][c]["f1"]) for c in CLASSES]
         lines.append("| " + " | ".join(values) + " |")
@@ -98,7 +102,12 @@ def main():
     questions = [
         ("Kiến trúc", "Luồng: ViT trích đặc trưng → merger/DeepStack ánh xạ sang chiều LLM → LLM sinh JSON autoregressive. "
          "E1 cập nhật LoRA LLM (252 module); E2 thêm toàn bộ merger và DeepStack float32; E3 thêm 96 module ViT. "
-         f"Số tham số dense đếm trên model meta: {architecture}; không dùng numel của trọng số đã đóng gói 4-bit."),
+         f"Tham số dense: ViT={architecture['vision_backbone']}, projector gồm merger/DeepStack={architecture['projector']}, "
+         f"LLM gồm embedding và lm_head chia sẻ trọng số={architecture['language_and_embedding']}; tổng={architecture['total']}. "
+         "Đếm trên model meta sau tie_weights; không dùng numel của trọng số đã đóng gói 4-bit. "
+         f"Model thực tế có patch={architecture['patch_size']}, merge={architecture['spatial_merge_size']}; "
+         f"grid processor={encoding['image_grid_thw']} tạo {encoding['vision_tokens']} token ảnh. "
+         "Con số patch 14 trong lời giải thích của đề không khớp cấu hình model thực tế đã đo."),
         ("E0", f"parse_valid_rate = {evidence['e0']['parse_valid_rate']}. Thống kê output: {dict(e0_errors)}. "
          "Scorer chấp nhận markdown fence và trích JSON trong văn bản, nên lời dẫn chưa chắc là lỗi parse. "
          f"Ví dụ ảnh {example_id}:\n```text\n{e0_preds[example_id]}\n```\n"
@@ -122,7 +131,10 @@ def main():
          "Loss trên toàn chuỗi buộc học dự đoán cả token prompt/placeholder ảnh và làm lệch mục tiêu JSON; không phải hồi quy tái tạo pixel. "
          "Mask nhãn không detach đặc trưng ảnh hoặc chặn gradient qua attention: khi mở LoRA ViT ở E3, "
          "loss assistant vẫn truyền gradient về khối thị giác qua đặc trưng dùng để sinh đáp án. "
-         "Kiểm tra tiền tố chat template, decode labels và số token được lưu trong work/encoding_audit.json."),
+         f"Kiểm tra thật: {encoding['vision_tokens']} token ảnh được mask, tiền tố hai chat template khớp, "
+         "decode phần labels được giám sát là JSON và <|im_end|>, kèm newline của template. "
+         "Tensor pixel_values và image_grid_thw được concatenate; token văn bản/attention mask được pad, labels padding=-100. "
+         "Chi tiết tại [encoding_audit.json](report/encoding_audit.json)."),
         ("Projector", "Skip list thực tế gồm visual, model.visual và lm_head để giữ projector ngoài lượng tử hóa "
          "trên Transformers 5.19. Linear4bit là trọng số đóng gói, "
          "không trở thành trọng số dense có thể train chỉ bằng requires_grad=True. "
@@ -131,7 +143,12 @@ def main():
          "extra_projector.pt được lưu cùng adapter và nạp vào model mới trước suy luận."),
         ("Split theo phiên quay", "Các frame liền kề có vật thể và bối cảnh gần trùng nhau; random split có thể đánh giá trên frame gần ảnh train. "
          "Gom theo session giảm rò rỉ đó, nhưng không chứng minh mọi session độc lập hoàn toàn. "
-         f"Thống kê thật, đã kiểm tra session không giao nhau: `{json.dumps(audit, ensure_ascii=False)}`."),
+         "Thống kê thật, đã kiểm tra session không giao nhau:\n\n"
+         "| Split | Ảnh | Session | Pothole | Crack | Manhole |\n"
+         "|---|---:|---:|---:|---:|---:|\n"
+         + "\n".join(f"| {split} | {audit[split]['n_images']} | {audit[split]['n_sessions']} | "
+                     + " | ".join(str(audit[split]['boxes'][c]) for c in CLASSES) + " |"
+                     for split in ('train', 'val', 'test'))),
         ("So sánh E1/E2/E3", f"Cấu hình nền chọn bằng validation là {best}. Đối chiếu F1, CI95, VRAM và phút trong bảng. "
          + "; ".join(comparisons) + ". F1 cao hơn không tự chứng minh lợi ích có ý nghĩa thống kê. "
          "Batch 2 × tích lũy 4 giữ effective batch 8, đúng cấu hình đề và dùng đồng nhất giữa các setup. "
