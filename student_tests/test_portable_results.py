@@ -43,3 +43,14 @@ def test_restore_rejects_checksum_mismatch(tmp_path, monkeypatch):
     encoded = base64.b64encode(gzip.compress(b'{"version":1,"files":{}}')).decode()
     with pytest.raises(ValueError, match='checksum'):
         restore_snapshot(encoded, '0'*64)
+
+
+def test_restore_can_use_explicit_checkpoint_folder_outside_repo(tmp_path, monkeypatch):
+    repo = tmp_path/'repo'
+    repo.mkdir()
+    monkeypatch.chdir(repo)
+    payload = json.dumps({'version':1, 'files':{'work/runs/e1/final/run.json':'{"completed_steps":300}'}}).encode()
+    encoded = base64.b64encode(gzip.compress(payload)).decode()
+    checkpoint_root = tmp_path/'explicit-checkpoints'
+    restore_snapshot(encoded, hashlib.sha256(payload).hexdigest(), checkpoint_root)
+    assert json.loads((checkpoint_root/'e1/final/run.json').read_text())['completed_steps'] == 300

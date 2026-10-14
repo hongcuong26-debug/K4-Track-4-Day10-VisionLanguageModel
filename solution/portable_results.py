@@ -42,14 +42,19 @@ def restore_snapshot(encoded, expected_sha256, output_root='work/runs'):
     resolved = []
     for name, content in data['files'].items():
         path = Path(name)
+        if '\\' in name or '..' in path.parts:
+            raise ValueError('Snapshot path escapes workspace')
         if path.is_absolute() or not name.startswith(('work/', 'report/')):
             raise ValueError('Unexpected snapshot path')
         if path.suffix not in ('.json', '.jsonl') or not isinstance(content, str):
             raise ValueError('Only JSON result files can be restored')
         if name.startswith('work/runs/'):
-            path = Path(output_root) / path.relative_to('work/runs')
+            allowed_root = Path(output_root).resolve()
+            path = allowed_root / path.relative_to('work/runs')
+        else:
+            allowed_root = root
         target = path.resolve()
-        if not target.is_relative_to(root):
+        if not target.is_relative_to(allowed_root):
             raise ValueError('Snapshot path escapes workspace')
         resolved.append((target, content))
     # Validate every path before any write.

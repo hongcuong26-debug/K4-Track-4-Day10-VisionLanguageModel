@@ -105,15 +105,25 @@ def main():
          f"Hai loại lỗi kiểm chứng bằng matching của scorer: bỏ sót {e0_fn} box GT và sinh {e0_fp} box "
          f"không khớp đúng lớp/IoU≥0.5. Lớp bị bỏ sót nhiều nhất theo số đếm là {e0_worst}, "
          f"FN={evidence['e0']['per_class'][e0_worst]['fn']}. Một FP có thể là sai lớp, sai vị trí hoặc box thừa; "
-         "không đồng nhất tất cả FP với hallucination."),
+         "không đồng nhất tất cả FP với hallucination. "
+         "Hai ví dụ đã đối chiếu trực quan: vlcsnap-2025-02-19-17h03m28s017 có 5 pothole GT "
+         "nhưng 0 TP, 5 FP, 5 FN do lệch box/nhầm lớp; vlcsnap-2025-02-19-17h03m29s526 "
+         "có 3 pothole và 1 crack GT nhưng sinh 4 manhole, trong đó một box bị lặp. "
+         "Chi tiết và sáu ảnh E0 tại [E0_FINDINGS.md](report/E0_FINDINGS.md)."),
         ("Thang 0–1000", f"Cùng dự đoán {best}, chấm đúng norm1000 F1={best_ev['micro']['f1']}, "
          f"cố ý chấm sai pixel F1={wrong_scale['micro']['f1']}. Không huấn luyện lại. "
-         "x_pixel=x_norm×width/1000 và y_pixel=y_norm×height/1000; nhầm thang làm đổi vị trí/kích thước và giảm IoU."),
+         "x_pixel=x_norm×width/1000 và y_pixel=y_norm×height/1000; nhầm thang làm đổi vị trí/kích thước và giảm IoU. "
+         "Ví dụ x_norm=750 tương ứng x_pixel=480 trên ảnh rộng 640 pixel. "
+         "Sai số làm tròn một góc không bị clip tối đa 0.5 đơn vị norm, tức 0.32 pixel ngang và 0.18 pixel dọc "
+         "trên ảnh 640×360; nhầm cả thang lớn hơn nhiều sai số lượng tử tọa độ này."),
         ("Mask loss", "labels của prompt, token ảnh và padding bằng -100; chỉ suffix assistant và token kết thúc được giám sát. "
          "Model tự dịch labels một vị trí khi tính causal loss, nên không dịch thêm trong collator. "
          "Loss trên toàn chuỗi buộc học dự đoán cả token prompt/placeholder ảnh và làm lệch mục tiêu JSON; không phải hồi quy tái tạo pixel. "
+         "Mask nhãn không detach đặc trưng ảnh hoặc chặn gradient qua attention: khi mở LoRA ViT ở E3, "
+         "loss assistant vẫn truyền gradient về khối thị giác qua đặc trưng dùng để sinh đáp án. "
          "Kiểm tra tiền tố chat template, decode labels và số token được lưu trong work/encoding_audit.json."),
-        ("Projector", "Skip visual/lm_head giữ projector ngoài lượng tử hóa. Linear4bit là trọng số đóng gói, "
+        ("Projector", "Skip list thực tế gồm visual, model.visual và lm_head để giữ projector ngoài lượng tử hóa "
+         "trên Transformers 5.19. Linear4bit là trọng số đóng gói, "
          "không trở thành trọng số dense có thể train chỉ bằng requires_grad=True. "
          "PEFT chuẩn bị k-bit rồi giữ phần thị giác đóng băng fp16, mở merger float32 và dùng autocast fp16/GradScaler. "
          "Float32 tăng độ ổn định lưu trọng số/gradient, không bảo đảm mọi phép tính dưới autocast đều float32. "
@@ -124,7 +134,11 @@ def main():
         ("So sánh E1/E2/E3", f"Cấu hình nền chọn bằng validation là {best}. Đối chiếu F1, CI95, VRAM và phút trong bảng. "
          + "; ".join(comparisons) + ". F1 cao hơn không tự chứng minh lợi ích có ý nghĩa thống kê. "
          "Batch 2 × tích lũy 4 giữ effective batch 8, đúng cấu hình đề và dùng đồng nhất giữa các setup. "
-         "Lượt thử batch 1 đã dừng do kiểm tra box zero-size quá chặt; được giữ riêng, không tính là lượt E1 hoàn chỉnh."),
+         "VRAM là max_memory_allocated chia 1e9, không phải bộ nhớ reserved hay tổng nvidia-smi. "
+         "Thời gian trong bảng đo phần train, không tính tải model và suy luận; checkpoint nằm trong vòng train. "
+         "Lượt thử batch 1 đã dừng do kiểm tra box zero-size quá chặt; lượt thử batch 2 cũng bị ngắt "
+         "khi Colab gửi interrupt cả nhóm subprocess. Các lượt này không được tính là E1 hoàn chỉnh. "
+         "Sau khi runtime cũ reset, E0 đã lưu được dùng lại; lượt E1 trong bảng được chạy lại từ model gốc."),
         ("CI95", "Độ rộng CI95 đo được: " + "; ".join(f"{n}={ev['f1_ci95'][1]-ev['f1_ci95'][0]}" for n, ev in evidence.items()) +
          ". Scorer bootstrap theo ảnh; frame trong một session có tương quan nên CI có thể lạc quan. "
          "Hai CI overlap không chứng minh bằng nhau; cần paired bootstrap chênh lệch F1, tốt hơn là resample session, "
@@ -138,6 +152,8 @@ def main():
          f"manifest lưu hai config: {manifest['configs']}. Số bước, LR, rank, seed và effective batch giữ nguyên. "
          "10% được chọn bằng shuffle seed cố định; 100% tái dùng chính checkpoint/prediction nền. "
          "Đây là so sánh cùng ngân sách optimizer steps, khiến 10% được lặp nhiều epoch hơn. "
+         "300 bước × effective batch 8 là 2400 lượt ảnh, xấp xỉ 1.69 epoch với 1422 ảnh "
+         "và 16.90 epoch với 142 ảnh. Vì vậy không diễn giải đây là so sánh cùng số epoch. "
          f"F1(10%)={low['micro']['f1']}, F1(100%)={full['micro']['f1']}; "
          f"ΔF1(10%−100%)={low['micro']['f1']-full['micro']['f1']}; CI95 riêng có overlap={overlap}. "
          "Không suy ra khác biệt có ý nghĩa chỉ từ overlap; dùng paired CI và ghi rõ đây là một seed.")]
